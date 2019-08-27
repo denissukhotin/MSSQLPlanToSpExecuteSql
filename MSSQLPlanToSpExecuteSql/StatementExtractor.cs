@@ -11,7 +11,7 @@ namespace MSSQLPlanToSpExecuteSql
         protected XmlDocument PlanXml;
         protected XmlNamespaceManager XmlnsManager;
 
-        private static readonly Version version16 = new Version("1.6");
+        private static readonly Version version2016SP1 = new Version("13.0.4001.0");
 
         protected StatementExtractor()
         {
@@ -31,9 +31,9 @@ namespace MSSQLPlanToSpExecuteSql
 
             StatementExtractor extractor = null;
 
-            var version = new Version(showPlanNode.Attributes["Version"].Value);
+            var version = new Version(showPlanNode.Attributes["Build"].Value);
 
-            if (version >= version16)
+            if (version >= version2016SP1)
             {
                 extractor = new StatementExtractor()
                 {
