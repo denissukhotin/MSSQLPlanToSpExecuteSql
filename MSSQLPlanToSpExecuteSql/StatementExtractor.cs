@@ -8,25 +8,55 @@ namespace MSSQLPlanToSpExecuteSql
 {
     class StatementExtractor
     {
-        private XmlDocument PlanXml;
-        private XmlNamespaceManager XmlnsManager;
+        protected XmlDocument PlanXml;
+        protected XmlNamespaceManager XmlnsManager;
 
-        private StatementExtractor()
+        private static readonly Version version16 = new Version("1.6");
+
+        protected StatementExtractor()
         {
-
         }
 
-        public StatementExtractor(XmlDocument planXml)
+        static StatementExtractor Create(XmlDocument planXml)
         {
-            PlanXml = planXml;
-            XmlnsManager = new XmlNamespaceManager(PlanXml.NameTable);
-            XmlnsManager.AddNamespace("p", "http://schemas.microsoft.com/sqlserver/2004/07/showplan");
+            XmlNamespaceManager xmlnsManager = new XmlNamespaceManager(planXml.NameTable);
+            xmlnsManager.AddNamespace("p", "http://schemas.microsoft.com/sqlserver/2004/07/showplan");
+
+            XmlNode showPlanNode = planXml.SelectSingleNode("/p:ShowPlanXML", xmlnsManager);
+
+            if (showPlanNode == null)
+            {
+                throw new InvalidOperationException("ShowPlanXML node missing.");
+            }
+
+            StatementExtractor extractor = null;
+
+            var version = new Version(showPlanNode.Attributes["Version"].Value);
+
+            if (version >= version16)
+            {
+                extractor = new StatementExtractor()
+                {
+                    PlanXml = planXml,
+                    XmlnsManager = xmlnsManager
+                }; 
+            }
+            else
+            {
+                extractor = new StatementExtractorPre16()
+                {
+                    PlanXml = planXml,
+                    XmlnsManager = xmlnsManager
+                };
+
+            }
+
+            return extractor;
         }
 
         public List<string> Convert()
         {
             List<string> results = new List<string>();
-
 
             var nodes = PlanXml.SelectNodes("//p:Statements", XmlnsManager);
             foreach (XmlNode node in nodes)
@@ -101,24 +131,10 @@ namespace MSSQLPlanToSpExecuteSql
 
                 if (parameterListNode != null)
                 {
-                    foreach (XmlNode parmNode in parameterListNode.ChildNodes)
-                    {
-                        string parmName = parmNode.Attributes["Column"].Value;
-                        string parmType = parmNode.Attributes["ParameterDataType"].Value;
-                        string parmValue = parmNode.Attributes["ParameterCompiledValue"].Value;
+                    List<ParmData> parmDataList = ExtractParmsData(parameterListNode);
 
-                        if (parmValue[0] == '(')
-                        {
-                            char[] chars = { '(', ')' };
-                            parmValue = parmValue.Trim(chars);
-                        }
-
-                        parmList += (string.IsNullOrEmpty(parmList) ? "" : ",");
-                        parmList += parmName + " " + parmType;
-
-                        parmValues += (string.IsNullOrEmpty(parmValues) ? "" : "," + Environment.NewLine);
-                        parmValues += parmName + " = " + parmValue;
-                    }
+                    parmList = string.Join(",", parmDataList.Select(p => p.Name + " " + p.Type));
+                    parmValues = string.Join("," + Environment.NewLine, parmDataList.Select(p => p.Name + " = " + p.Value));                    
                 }
 
                 sql = "exec sp_executesql N'" + statementText + "'";
@@ -129,9 +145,36 @@ namespace MSSQLPlanToSpExecuteSql
             return sql;
         }
 
+        protected virtual List<ParmData> ExtractParmsData(XmlNode parameterListNode)
+        {
+            List<ParmData> result = new List<ParmData>();
+
+            foreach (XmlNode parmNode in parameterListNode.ChildNodes)
+            {
+                string parmName = parmNode.Attributes["Column"].Value;
+                string parmType = parmNode.Attributes["ParameterDataType"].Value;
+                string parmValue = parmNode.Attributes["ParameterCompiledValue"].Value;
+
+                if (parmValue[0] == '(')
+                {
+                    char[] chars = { '(', ')' };
+                    parmValue = parmValue.Trim(chars);
+                }
+
+                result.Add(new ParmData()
+                {
+                    Name = parmName,
+                    Type = parmType,
+                    Value = parmValue
+                });
+            }
+
+            return result;
+        }
+
         public static List<string> ConvertPlanToStatementList(XmlDocument planXml)
         {
-            var extractor = new StatementExtractor(planXml);
+            var extractor = Create(planXml);
             return extractor.Convert();
         }
 
