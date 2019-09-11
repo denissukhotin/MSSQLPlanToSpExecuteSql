@@ -1,4 +1,4 @@
-﻿namespace MSSQLPlanToSpExecuteSql
+﻿namespace MSSQLPlanToSpExecuteSql.Contracts
 {
     class ParmData
     {

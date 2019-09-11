@@ -1,4 +1,5 @@
-﻿using System;
+﻿using MSSQLPlanToSpExecuteSql.Contracts;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -6,7 +7,7 @@ using System.Xml;
 
 namespace MSSQLPlanToSpExecuteSql
 {
-    class StatementExtractorPre16 : StatementExtractor
+    class StatementExtractorPre2016SP1 : StatementExtractor
     {
         protected override List<ParmData> ExtractParmsData(XmlNode parameterListNode)
         {
@@ -48,6 +49,10 @@ namespace MSSQLPlanToSpExecuteSql
                         parmType = "bigint";
                     }
                 }
+                else if (parmValue.Substring(0, 2) == "0x")
+                {
+                    parmType = "varbinary(max)";
+                }
                 else if (parmValue.Substring(0, 1) == "'" && parmValue.Substring(parmValue.Length - 1, 1) == "'")
                 {
                     char[] chars = { '\'', '\'' };
@@ -63,6 +68,10 @@ namespace MSSQLPlanToSpExecuteSql
                         parmType = "varchar(" + parmValue.Length + ")";
                     }
                 }
+                else if (parmValue.Substring(0, 6) == "{guid'" && parmValue.Substring(parmValue.Length - 2, 2) == "'}")
+                {
+                    parmType = "uniqueidentifier";
+                }                
                 else if (parmValue.Substring(0, 2) == "N'" && parmValue.Substring(parmValue.Length - 1, 1) == "'")
                 {
                     parmType = "nvarchar(" + parmValue.Length + ")";
@@ -76,6 +85,8 @@ namespace MSSQLPlanToSpExecuteSql
                     Value = parmValue
                 });
             }
+
+            result.Reverse();
 
             return result;
         }

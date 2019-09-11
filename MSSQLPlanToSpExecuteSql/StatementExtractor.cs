@@ -1,4 +1,5 @@
-﻿using System;
+﻿using MSSQLPlanToSpExecuteSql.Contracts;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -43,7 +44,7 @@ namespace MSSQLPlanToSpExecuteSql
             }
             else
             {
-                extractor = new StatementExtractorPre16()
+                extractor = new StatementExtractorPre2016SP1()
                 {
                     PlanXml = planXml,
                     XmlnsManager = xmlnsManager
@@ -54,34 +55,30 @@ namespace MSSQLPlanToSpExecuteSql
             return extractor;
         }
 
-        public List<string> Convert()
+        public List<Statement> Convert()
         {
-            List<string> results = new List<string>();
+            List<Statement> results = new List<Statement>();
 
             var nodes = PlanXml.SelectNodes("//p:Statements", XmlnsManager);
             foreach (XmlNode node in nodes)
             {
                 foreach(XmlNode nodeStatement in node.ChildNodes)
                 {
-                    string statement = ConvertStatement(nodeStatement);
-                    if (! string.IsNullOrEmpty(statement))
-                    {
-                        results.Add(statement);
-                    }
+                    Statement statement = ConvertStatement(nodeStatement);
+                    results.Add(statement);
                 }
             }
 
             return results;
         }
 
-        private string ConvertStatement(XmlNode node)
+        private Statement ConvertStatement(XmlNode node)
         {
             string statementText = node.Attributes["StatementText"].Value;
-            string sql = "";
+            List<ParmData> parmDataList = null;
 
             if (!string.IsNullOrEmpty(statementText))
             {
-                statementText = statementText.Replace("'", "''");
                 if (statementText[0] == '(')
                 {
                     var stack = new Stack<int>();
@@ -125,24 +122,14 @@ namespace MSSQLPlanToSpExecuteSql
                         parameterListNode = node.SelectSingleNode("p:QueryPlan/p:ParameterList", XmlnsManager);
                         break;
                 }
-
-                string parmList = "";
-                string parmValues = "";
-
-                if (parameterListNode != null)
-                {
-                    List<ParmData> parmDataList = ExtractParmsData(parameterListNode);
-
-                    parmList = string.Join(",", parmDataList.Select(p => p.Name + " " + p.Type));
-                    parmValues = string.Join("," + Environment.NewLine, parmDataList.Select(p => p.Name + " = " + p.Value));                    
-                }
-
-                sql = "exec sp_executesql N'" + statementText + "'";
-                sql += (string.IsNullOrEmpty(parmList) ? "" : "," + Environment.NewLine + "@params = N'" + parmList + "'");
-                sql += (string.IsNullOrEmpty(parmValues) ? "" : "," + Environment.NewLine) + parmValues;
+                parmDataList = ExtractParmsData(parameterListNode);
             }
 
-            return sql;
+            return new Statement()
+            {
+                SpExecSql = BuildSpExecSql(statementText, parmDataList),
+                DirectSql = BuildDirectSql(statementText, parmDataList)
+            };
         }
 
         protected virtual List<ParmData> ExtractParmsData(XmlNode parameterListNode)
@@ -169,16 +156,81 @@ namespace MSSQLPlanToSpExecuteSql
                 });
             }
 
+            result.Reverse();
+
             return result;
         }
 
-        public static List<string> ConvertPlanToStatementList(XmlDocument planXml)
+        private string BuildSpExecSql(string statementText, List<ParmData> parmDataList)
+        {
+            string parmList = "";
+            string parmValues = "";
+            string sql = "";
+
+            if (parmDataList != null)
+            {
+                parmList = string.Join(",", parmDataList.Select(p => p.Name + " " + p.Type));
+                parmValues = string.Join("," + Environment.NewLine, parmDataList.Select(p => p.Name + " = " + p.Value));
+            }
+
+            sql = "exec sp_executesql N'" + statementText.Replace("'", "''") + "'";
+            sql += (string.IsNullOrEmpty(parmList) ? "" : "," + Environment.NewLine + "@params = N'" + parmList + "'");
+            sql += (string.IsNullOrEmpty(parmValues) ? "" : "," + Environment.NewLine) + parmValues;
+
+            return sql;
+        }
+        private string BuildDirectSql(string statementText, List<ParmData> parmDataList)
+        {
+            string sWork = statementText;
+            int startIdx = sWork.IndexOf("'");
+            int endIdx = 0;
+            Dictionary<string, string> literals = new Dictionary<string, string>();
+            int occurance = 0;
+
+            while (startIdx != -1)
+            {
+                endIdx = sWork.IndexOf("'", startIdx + 1);
+                while (endIdx > 0 && endIdx < sWork.Length - 1 && sWork[endIdx + 1] == '\'')
+                {
+                    endIdx = sWork.IndexOf("'", endIdx + 2);
+                }
+
+                if (endIdx == -1)
+                {
+                    return "Failed to put parameters: " + statementText;
+                }
+
+                occurance++;
+                string placeholder = string.Format("#lit{0}#", occurance);
+                literals.Add(placeholder, sWork.Substring(startIdx, endIdx - startIdx + 1));
+
+                sWork = sWork.Remove(startIdx, endIdx - startIdx + 1);
+                sWork = sWork.Insert(startIdx, placeholder);
+
+                startIdx = sWork.IndexOf("'");
+            }
+
+            foreach(ParmData p in parmDataList.OrderByDescending(l => l.Name.Length))
+            {
+                sWork = sWork.Replace(p.Name, p.Value);
+            }
+
+            var literalsEnum = literals.GetEnumerator();
+            while (literalsEnum.MoveNext())
+            {
+                sWork = sWork.Replace(literalsEnum.Current.Key, literalsEnum.Current.Value);
+            }
+
+            return sWork;
+        }
+
+        public static List<Statement> ConvertPlanToStatementList(XmlDocument planXml)
         {
             var extractor = Create(planXml);
             return extractor.Convert();
         }
 
-        public static List<string> ConvertPlanToStatementList(string planXmlStr)
+        public static List<Statement> ConvertPlanToStatementList(string planXmlStr)
         {
             XmlDocument planXml = new XmlDocument();
             planXml.LoadXml(planXmlStr);
