@@ -9,4 +9,4 @@ Simple application to extract statement and call parameters from MS SQL executio
 - Run it.
 - Paste execution plan XML to the left box.
 - Press ''>>''.
-- Collect exec sp_executesql command to run the statement from the right box.
+- Collect exec sp_executesql command or direct sql to run the statement from the right box.
