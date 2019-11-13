@@ -3,6 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Text.RegularExpressions;
 using System.Xml;
 
 namespace MSSQLPlanToSpExecuteSql
@@ -19,7 +20,8 @@ namespace MSSQLPlanToSpExecuteSql
                 string parmType = "UNKNOWN";
                 string parmValue = parmNode.Attributes["ParameterCompiledValue"].Value;
 
-                if (parmValue.Substring(0, 1) == "(" && parmValue.Substring(parmValue.Length - 1, 1) == ")")
+                if (parmValue.Length >= 2
+                    && parmValue.Substring(0, 1) == "(" && parmValue.Substring(parmValue.Length - 1, 1) == ")")
                 {
                     char[] chars = { '(', ')' };
                     parmValue = parmValue.Trim(chars);
@@ -49,30 +51,34 @@ namespace MSSQLPlanToSpExecuteSql
                         parmType = "bigint";
                     }
                 }
-                else if (parmValue.Substring(0, 2) == "0x")
+                else if (parmValue.Length >= 2
+                    && parmValue.Substring(0, 2) == "0x")
                 {
                     parmType = "varbinary(max)";
                 }
-                else if (parmValue.Substring(0, 1) == "'" && parmValue.Substring(parmValue.Length - 1, 1) == "'")
+                else if (parmValue.Length >= 2
+                    && parmValue.Substring(0, 1) == "'" && parmValue.Substring(parmValue.Length - 1, 1) == "'")
                 {
                     char[] chars = { '\'', '\'' };
                     DateTime dateTimeVal;
-
-                    if (DateTime.TryParse(parmValue.Trim(chars), out dateTimeVal))
+                    string parmValueTrimmed = parmValue.Trim(chars);
+                    if (DateTime.TryParse(parmValueTrimmed, out dateTimeVal))
                     {
                         parmType = "datetime";
-                        parmValue = "{ts " + parmValue + "}";
+                        parmValue = "{ts '" + Regex.Replace(parmValueTrimmed, "\\.0*$", "") + "'}";
                     }
                     else
                     {
                         parmType = "varchar(" + parmValue.Length + ")";
                     }
                 }
-                else if (parmValue.Substring(0, 6) == "{guid'" && parmValue.Substring(parmValue.Length - 2, 2) == "'}")
+                else if (parmValue.Length >= 8
+                    && parmValue.Substring(0, 6) == "{guid'" && parmValue.Substring(parmValue.Length - 2, 2) == "'}")
                 {
                     parmType = "uniqueidentifier";
                 }                
-                else if (parmValue.Substring(0, 2) == "N'" && parmValue.Substring(parmValue.Length - 1, 1) == "'")
+                else if (parmValue.Length >= 3
+                    && parmValue.Substring(0, 2) == "N'" && parmValue.Substring(parmValue.Length - 1, 1) == "'")
                 {
                     parmType = "nvarchar(" + parmValue.Length + ")";
                 }
