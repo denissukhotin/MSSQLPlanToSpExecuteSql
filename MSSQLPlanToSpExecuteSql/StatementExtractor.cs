@@ -122,7 +122,10 @@ namespace MSSQLPlanToSpExecuteSql
                         parameterListNode = node.SelectSingleNode("p:QueryPlan/p:ParameterList", XmlnsManager);
                         break;
                 }
-                parmDataList = ExtractParmsData(parameterListNode);
+                if (parameterListNode != null)
+                {
+                    parmDataList = ExtractParmsData(parameterListNode);
+                }
             }
 
             return new Statement()
@@ -210,9 +213,12 @@ namespace MSSQLPlanToSpExecuteSql
                 startIdx = sWork.IndexOf("'");
             }
 
-            foreach(ParmData p in parmDataList.OrderByDescending(l => l.Name.Length))
+            if (parmDataList != null)
             {
-                sWork = sWork.Replace(p.Name, p.Value);
+                foreach (ParmData p in parmDataList.OrderByDescending(l => l.Name.Length))
+                {
+                    sWork = sWork.Replace(p.Name, p.Value);
+                }
             }
 
             var literalsEnum = literals.GetEnumerator();
