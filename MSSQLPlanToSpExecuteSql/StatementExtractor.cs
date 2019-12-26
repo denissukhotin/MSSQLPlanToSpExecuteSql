@@ -3,6 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Text.RegularExpressions;
 using System.Xml;
 
 namespace MSSQLPlanToSpExecuteSql
@@ -141,9 +142,19 @@ namespace MSSQLPlanToSpExecuteSql
 
             foreach (XmlNode parmNode in parameterListNode.ChildNodes)
             {
+                string parmValue = "";
+
                 string parmName = parmNode.Attributes["Column"].Value;
                 string parmType = parmNode.Attributes["ParameterDataType"].Value;
-                string parmValue = parmNode.Attributes["ParameterCompiledValue"].Value;
+
+                if (parmNode.Attributes["ParameterCompiledValue"] != null)
+                {
+                    parmValue = parmNode.Attributes["ParameterCompiledValue"].Value;
+                }
+                else if (parmNode.Attributes["ParameterRuntimeValue"] != null)
+                {
+                    parmValue = parmNode.Attributes["ParameterRuntimeValue"].Value;
+                }
 
                 if (parmValue[0] == '(')
                 {
@@ -184,6 +195,11 @@ namespace MSSQLPlanToSpExecuteSql
         }
         private string BuildDirectSql(string statementText, List<ParmData> parmDataList)
         {
+            if (parmDataList == null)
+            {
+                return statementText;
+            }
+
             string sWork = statementText;
             int startIdx = sWork.IndexOf("'");
             int endIdx = 0;
@@ -213,12 +229,19 @@ namespace MSSQLPlanToSpExecuteSql
                 startIdx = sWork.IndexOf("'");
             }
 
-            if (parmDataList != null)
+            var variableValidChars = @"@[\p{L}{\p{Nd}}$#_][\p{L}{\p{Nd}}@$#_]*";
+
+            foreach (Match m in Regex.Matches(sWork, variableValidChars).Cast<Match>().OrderByDescending(m => m.Index))
             {
-                foreach (ParmData p in parmDataList.OrderByDescending(l => l.Name.Length))
+                var paramName = m.Value;
+                
+                if (parmDataList.Exists(p => p.Name == paramName))
                 {
-                    sWork = sWork.Replace(p.Name, p.Value);
-                }
+                    var parmData = parmDataList.First(p => p.Name == paramName);
+
+                    sWork = sWork.Remove(m.Index, paramName.Length);
+                    sWork = sWork.Insert(m.Index, parmData.Value);
+                }                
             }
 
             var literalsEnum = literals.GetEnumerator();

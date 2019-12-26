@@ -13,12 +13,27 @@ namespace MSSQLPlanToSpExecuteSql
         protected override List<ParmData> ExtractParmsData(XmlNode parameterListNode)
         {
             List<ParmData> result = new List<ParmData>();
-
-            foreach (XmlNode parmNode in parameterListNode.ChildNodes)
+            
+           foreach (XmlNode parmNode in parameterListNode.ChildNodes)
             {
+                string parmValue = "";
+
+                if (parmNode.Attributes["ParameterCompiledValue"] != null)
+                {
+                    parmValue = parmNode.Attributes["ParameterCompiledValue"].Value;
+                }
+                else if (parmNode.Attributes["ParameterRuntimeValue"] != null)
+                {
+                    parmValue = parmNode.Attributes["ParameterRuntimeValue"].Value;
+                }
+
+                if (string.IsNullOrEmpty(parmValue))
+                {
+                    continue;
+                }
+
                 string parmName = parmNode.Attributes["Column"].Value;
-                string parmType = "UNKNOWN";
-                string parmValue = parmNode.Attributes["ParameterCompiledValue"].Value;
+                string parmType = "UNKNOWN";                
 
                 if (parmValue.Length >= 2
                     && parmValue.Substring(0, 1) == "(" && parmValue.Substring(parmValue.Length - 1, 1) == ")")
