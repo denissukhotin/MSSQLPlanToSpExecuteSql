@@ -161,6 +161,16 @@ namespace MSSQLPlanToSpExecuteSql
                     char[] chars = { '(', ')' };
                     parmValue = parmValue.Trim(chars);
                 }
+                if (parmType.StartsWith("datetime"))
+                {
+                    char[] chars = { '\'', '\'' };
+                    DateTime dateTimeVal;
+                    string parmValueTrimmed = parmValue.Trim(chars);
+                    if (DateTime.TryParse(parmValueTrimmed, out dateTimeVal))
+                    {
+                        parmValue = "{ts '" + Regex.Replace(parmValueTrimmed, "\\.0*$", "") + "'}";
+                    }
+                }
 
                 result.Add(new ParmData()
                 {
