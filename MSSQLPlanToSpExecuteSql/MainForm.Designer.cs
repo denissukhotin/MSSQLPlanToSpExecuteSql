@@ -33,7 +33,6 @@
             this.PlanLabel = new System.Windows.Forms.Label();
             this.label1 = new System.Windows.Forms.Label();
             this.tableLayoutPanel1 = new System.Windows.Forms.TableLayoutPanel();
-            this.PlanXMLText = new System.Windows.Forms.RichTextBox();
             this.tableLayoutPanel2 = new System.Windows.Forms.TableLayoutPanel();
             this.DirectSqlText = new System.Windows.Forms.RichTextBox();
             this.contextMenuStrip1 = new System.Windows.Forms.ContextMenuStrip(this.components);
@@ -41,9 +40,14 @@
             this.SpExecuteSqlText = new System.Windows.Forms.RichTextBox();
             this.SpExecSqlCopy = new System.Windows.Forms.Button();
             this.DirectSqlCopy = new System.Windows.Forms.Button();
+            this.tableLayoutPanel3 = new System.Windows.Forms.TableLayoutPanel();
+            this.PlanXMLText = new System.Windows.Forms.RichTextBox();
+            this.Browse = new System.Windows.Forms.Button();
+            this.OpenFileDialog = new System.Windows.Forms.OpenFileDialog();
             this.tableLayoutPanel1.SuspendLayout();
             this.tableLayoutPanel2.SuspendLayout();
             this.contextMenuStrip1.SuspendLayout();
+            this.tableLayoutPanel3.SuspendLayout();
             this.SuspendLayout();
             // 
             // GenerateSqlButton
@@ -89,8 +93,8 @@
             this.tableLayoutPanel1.Controls.Add(this.PlanLabel, 0, 0);
             this.tableLayoutPanel1.Controls.Add(this.label1, 2, 0);
             this.tableLayoutPanel1.Controls.Add(this.GenerateSqlButton, 1, 1);
-            this.tableLayoutPanel1.Controls.Add(this.PlanXMLText, 0, 1);
             this.tableLayoutPanel1.Controls.Add(this.tableLayoutPanel2, 2, 1);
+            this.tableLayoutPanel1.Controls.Add(this.tableLayoutPanel3, 0, 1);
             this.tableLayoutPanel1.Location = new System.Drawing.Point(3, 2);
             this.tableLayoutPanel1.Name = "tableLayoutPanel1";
             this.tableLayoutPanel1.RowCount = 2;
@@ -99,17 +103,6 @@
             this.tableLayoutPanel1.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Absolute, 20F));
             this.tableLayoutPanel1.Size = new System.Drawing.Size(1073, 486);
             this.tableLayoutPanel1.TabIndex = 7;
-            // 
-            // PlanXMLText
-            // 
-            this.PlanXMLText.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
-            | System.Windows.Forms.AnchorStyles.Left) 
-            | System.Windows.Forms.AnchorStyles.Right)));
-            this.PlanXMLText.Location = new System.Drawing.Point(3, 24);
-            this.PlanXMLText.Name = "PlanXMLText";
-            this.PlanXMLText.Size = new System.Drawing.Size(500, 459);
-            this.PlanXMLText.TabIndex = 8;
-            this.PlanXMLText.Text = "";
             // 
             // tableLayoutPanel2
             // 
@@ -194,6 +187,49 @@
             this.DirectSqlCopy.UseVisualStyleBackColor = true;
             this.DirectSqlCopy.Click += new System.EventHandler(this.CopyDirectSql);
             // 
+            // tableLayoutPanel3
+            // 
+            this.tableLayoutPanel3.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
+            | System.Windows.Forms.AnchorStyles.Left) 
+            | System.Windows.Forms.AnchorStyles.Right)));
+            this.tableLayoutPanel3.ColumnCount = 1;
+            this.tableLayoutPanel3.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 100F));
+            this.tableLayoutPanel3.Controls.Add(this.PlanXMLText, 0, 0);
+            this.tableLayoutPanel3.Controls.Add(this.Browse, 0, 1);
+            this.tableLayoutPanel3.Location = new System.Drawing.Point(3, 24);
+            this.tableLayoutPanel3.Name = "tableLayoutPanel3";
+            this.tableLayoutPanel3.RowCount = 2;
+            this.tableLayoutPanel3.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 93.24619F));
+            this.tableLayoutPanel3.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 6.753813F));
+            this.tableLayoutPanel3.Size = new System.Drawing.Size(500, 459);
+            this.tableLayoutPanel3.TabIndex = 10;
+            // 
+            // PlanXMLText
+            // 
+            this.PlanXMLText.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
+            | System.Windows.Forms.AnchorStyles.Left) 
+            | System.Windows.Forms.AnchorStyles.Right)));
+            this.PlanXMLText.Location = new System.Drawing.Point(3, 3);
+            this.PlanXMLText.Name = "PlanXMLText";
+            this.PlanXMLText.Size = new System.Drawing.Size(494, 421);
+            this.PlanXMLText.TabIndex = 9;
+            this.PlanXMLText.Text = "";
+            // 
+            // Browse
+            // 
+            this.Browse.Location = new System.Drawing.Point(3, 430);
+            this.Browse.Name = "Browse";
+            this.Browse.Size = new System.Drawing.Size(69, 26);
+            this.Browse.TabIndex = 10;
+            this.Browse.Text = "Browse";
+            this.Browse.UseVisualStyleBackColor = true;
+            this.Browse.Click += new System.EventHandler(this.Browse_Click);
+            // 
+            // OpenFileDialog
+            // 
+            this.OpenFileDialog.RestoreDirectory = true;
+            this.OpenFileDialog.Title = "Select showplan file...";
+            // 
             // MainForm
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(8F, 16F);
@@ -202,10 +238,12 @@
             this.Controls.Add(this.tableLayoutPanel1);
             this.Name = "MainForm";
             this.Text = "Plan XML to sp_executesql";
+            this.Load += new System.EventHandler(this.MainForm_Load);
             this.tableLayoutPanel1.ResumeLayout(false);
             this.tableLayoutPanel1.PerformLayout();
             this.tableLayoutPanel2.ResumeLayout(false);
             this.contextMenuStrip1.ResumeLayout(false);
+            this.tableLayoutPanel3.ResumeLayout(false);
             this.ResumeLayout(false);
 
         }
@@ -215,7 +253,6 @@
         private System.Windows.Forms.Label PlanLabel;
         private System.Windows.Forms.Label label1;
         private System.Windows.Forms.TableLayoutPanel tableLayoutPanel1;
-        private System.Windows.Forms.RichTextBox PlanXMLText;
         private System.Windows.Forms.TableLayoutPanel tableLayoutPanel2;
         private System.Windows.Forms.RichTextBox SpExecuteSqlText;
         private System.Windows.Forms.RichTextBox DirectSqlText;
@@ -223,6 +260,10 @@
         private System.Windows.Forms.ToolStripMenuItem copyToolStripMenuItem;
         private System.Windows.Forms.Button SpExecSqlCopy;
         private System.Windows.Forms.Button DirectSqlCopy;
+        private System.Windows.Forms.TableLayoutPanel tableLayoutPanel3;
+        private System.Windows.Forms.RichTextBox PlanXMLText;
+        private System.Windows.Forms.Button Browse;
+        private System.Windows.Forms.OpenFileDialog OpenFileDialog;
     }
 }
 

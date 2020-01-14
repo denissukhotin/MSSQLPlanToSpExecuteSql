@@ -3,9 +3,12 @@ using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Data;
+using System.Diagnostics;
 using System.Drawing;
+using System.IO;
 using System.Linq;
 using System.Text;
+using System.Threading.Tasks;
 using System.Windows.Forms;
 
 namespace MSSQLPlanToSpExecuteSql
@@ -17,6 +20,39 @@ namespace MSSQLPlanToSpExecuteSql
             InitializeComponent();
         }
 
+        private async Task<string> ReadFile(FileStream stream)
+        {
+            string result = "";
+
+            var buffer = new char[12];
+
+            using (var reader = new StreamReader(stream))
+            {
+                if (reader.Read(buffer, 0, buffer.Length) > 0)
+                {
+                    var startingStr = new string(buffer);
+                    if (startingStr == "<ShowPlanXML")
+                    {
+                        result = startingStr;
+                        result += await reader.ReadToEndAsync();
+                    }
+                    else
+                    {
+                        result = "Wrong file format!";
+                    }
+                }                           
+            }
+            return result;
+        }
+
+        private async void LoadPlanXMLFromFile(string fileName)
+        {
+            using (var fileStream = new FileStream(fileName, FileMode.Open, FileAccess.Read))
+            {
+                PlanXMLText.Text = await ReadFile(fileStream);                
+            }
+        }
+
         private void GenerateSqlButton_Click(object sender, EventArgs e)
         {
             string xmlStr = PlanXMLText.Text;
@@ -25,7 +61,6 @@ namespace MSSQLPlanToSpExecuteSql
             {
                 return;
             }
-
             List<Statement> results = StatementExtractor.ConvertPlanToStatementList(xmlStr);
 
             SpExecuteSqlText.Text = "";
@@ -77,6 +112,21 @@ namespace MSSQLPlanToSpExecuteSql
         void CopyDirectSql(object sender, EventArgs e)
         {
             Clipboard.SetText(DirectSqlText.Text);
+        }
+
+        private void MainForm_Load(object sender, EventArgs e)
+        {
+            OpenFileDialog.InitialDirectory = Environment.GetFolderPath(Environment.SpecialFolder.Desktop);
+        }
+
+        private void Browse_Click(object sender, EventArgs e)
+        {
+            var dialogResult = OpenFileDialog.ShowDialog();
+
+            if (dialogResult == DialogResult.OK)
+            {
+                LoadPlanXMLFromFile(OpenFileDialog.FileName);
+            }
         }
     }
 }
