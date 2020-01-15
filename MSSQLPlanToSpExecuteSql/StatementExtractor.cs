@@ -56,21 +56,17 @@ namespace MSSQLPlanToSpExecuteSql
             return extractor;
         }
 
-        public List<Statement> Convert()
+        private IEnumerable<Statement> Convert()
         {
-            List<Statement> results = new List<Statement>();
-
             var nodes = PlanXml.SelectNodes("//p:Statements", XmlnsManager);
             foreach (XmlNode node in nodes)
             {
                 foreach(XmlNode nodeStatement in node.ChildNodes)
                 {
                     Statement statement = ConvertStatement(nodeStatement);
-                    results.Add(statement);
+                    yield return statement;
                 }
             }
-
-            return results;
         }
 
         private Statement ConvertStatement(XmlNode node)
@@ -263,18 +259,18 @@ namespace MSSQLPlanToSpExecuteSql
             return sWork;
         }
 
-        public static List<Statement> ConvertPlanToStatementList(XmlDocument planXml)
+        public static IEnumerable<Statement> ConvertPlanToStatements(XmlDocument planXml)
         {
             var extractor = Create(planXml);
             return extractor.Convert();
         }
 
-        public static List<Statement> ConvertPlanToStatementList(string planXmlStr)
-        {
+        public static IEnumerable<Statement> ConvertPlanToStatements(string planXmlStr)
+        {            
             XmlDocument planXml = new XmlDocument();
             planXml.LoadXml(planXmlStr);
 
-            return ConvertPlanToStatementList(planXml);
+            return ConvertPlanToStatements(planXml);
         }
     }
 }

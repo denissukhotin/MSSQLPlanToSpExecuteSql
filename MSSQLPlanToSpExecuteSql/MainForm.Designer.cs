@@ -209,6 +209,7 @@
             this.PlanXMLText.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
             | System.Windows.Forms.AnchorStyles.Left) 
             | System.Windows.Forms.AnchorStyles.Right)));
+            this.PlanXMLText.EnableAutoDragDrop = true;
             this.PlanXMLText.Location = new System.Drawing.Point(3, 3);
             this.PlanXMLText.Name = "PlanXMLText";
             this.PlanXMLText.Size = new System.Drawing.Size(494, 421);
@@ -227,11 +228,11 @@
             // 
             // OpenFileDialog
             // 
-            this.OpenFileDialog.RestoreDirectory = true;
             this.OpenFileDialog.Title = "Select showplan file...";
             // 
             // MainForm
             // 
+            this.AllowDrop = true;
             this.AutoScaleDimensions = new System.Drawing.SizeF(8F, 16F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(1079, 489);
@@ -239,6 +240,8 @@
             this.Name = "MainForm";
             this.Text = "Plan XML to sp_executesql";
             this.Load += new System.EventHandler(this.MainForm_Load);
+            this.DragDrop += new System.Windows.Forms.DragEventHandler(this.MainForm_DragDrop);
+            this.DragEnter += new System.Windows.Forms.DragEventHandler(this.MainForm_DragEnter);
             this.tableLayoutPanel1.ResumeLayout(false);
             this.tableLayoutPanel1.PerformLayout();
             this.tableLayoutPanel2.ResumeLayout(false);

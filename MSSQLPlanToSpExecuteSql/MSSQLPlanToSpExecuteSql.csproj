@@ -48,6 +48,15 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Contracts\Statement.cs" />
+    <Compile Include="Handlers\BaseParser.cs" />
+    <Compile Include="Handlers\IParser.cs" />
+    <Compile Include="Handlers\ParmNodeHandler.cs" />
+    <Compile Include="Handlers\ParserBinary.cs" />
+    <Compile Include="Handlers\ParserDateTime.cs" />
+    <Compile Include="Handlers\ParserGuid.cs" />
+    <Compile Include="Handlers\ParserNumber.cs" />
+    <Compile Include="Handlers\ParserString.cs" />
+    <Compile Include="Handlers\ParserUnknown.cs" />
     <Compile Include="MainForm.cs">
       <SubType>Form</SubType>
     </Compile>
@@ -83,5 +92,6 @@
       <DesignTimeSharedInput>True</DesignTimeSharedInput>
     </Compile>
   </ItemGroup>
+  <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

@@ -10,6 +10,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
+using System.Xml;
 
 namespace MSSQLPlanToSpExecuteSql
 {
@@ -18,29 +19,17 @@ namespace MSSQLPlanToSpExecuteSql
         public MainForm()
         {
             InitializeComponent();
+            PlanXMLText.DragEnter += MainForm_DragEnter;
+            PlanXMLText.DragDrop += MainForm_DragDrop;
         }
 
         private async Task<string> ReadFile(FileStream stream)
         {
             string result = "";
 
-            var buffer = new char[12];
-
             using (var reader = new StreamReader(stream))
             {
-                if (reader.Read(buffer, 0, buffer.Length) > 0)
-                {
-                    var startingStr = new string(buffer);
-                    if (startingStr == "<ShowPlanXML")
-                    {
-                        result = startingStr;
-                        result += await reader.ReadToEndAsync();
-                    }
-                    else
-                    {
-                        result = "Wrong file format!";
-                    }
-                }                           
+                result = await reader.ReadToEndAsync();
             }
             return result;
         }
@@ -61,24 +50,30 @@ namespace MSSQLPlanToSpExecuteSql
             {
                 return;
             }
-            List<Statement> results = StatementExtractor.ConvertPlanToStatementList(xmlStr);
-
             SpExecuteSqlText.Text = "";
             DirectSqlText.Text = "";
 
-            foreach (var res in results)
+            try
             {
-                if (!string.IsNullOrEmpty(SpExecuteSqlText.Text))
+                foreach (var res in StatementExtractor.ConvertPlanToStatements(xmlStr))
                 {
-                    SpExecuteSqlText.Text += Environment.NewLine + Environment.NewLine;
-                }
-                SpExecuteSqlText.Text += res.SpExecSql;
+                    if (!string.IsNullOrEmpty(SpExecuteSqlText.Text))
+                    {
+                        SpExecuteSqlText.Text += Environment.NewLine + Environment.NewLine;
+                    }
+                    SpExecuteSqlText.Text += res.SpExecSql;
 
-                if (!string.IsNullOrEmpty(DirectSqlText.Text))
-                {
-                    DirectSqlText.Text += Environment.NewLine + Environment.NewLine;
+                    if (!string.IsNullOrEmpty(DirectSqlText.Text))
+                    {
+                        DirectSqlText.Text += Environment.NewLine + Environment.NewLine;
+                    }
+                    DirectSqlText.Text += res.DirectSql;
                 }
-                DirectSqlText.Text += res.DirectSql;
+            }
+            catch (XmlException)
+            {
+                SpExecuteSqlText.Text = "Wrong showplan XML format!";
+                DirectSqlText.Text = "Wrong showplan XML format!";
             }
         }
 
@@ -126,6 +121,23 @@ namespace MSSQLPlanToSpExecuteSql
             if (dialogResult == DialogResult.OK)
             {
                 LoadPlanXMLFromFile(OpenFileDialog.FileName);
+            }
+        }
+
+        private void MainForm_DragEnter(object sender, DragEventArgs e)
+        {
+            if (e.Data.GetDataPresent(DataFormats.FileDrop))
+            {
+                e.Effect = DragDropEffects.Copy;
+            }
+        }
+
+        private void MainForm_DragDrop(object sender, DragEventArgs e)
+        {
+            var files = (string[])e.Data.GetData(DataFormats.FileDrop);
+            if (files.Length >= 1)
+            {
+                LoadPlanXMLFromFile(files[0]);
             }
         }
     }
